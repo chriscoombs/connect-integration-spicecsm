@@ -1,9 +1,12 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Description: "SpiceCSM Integration for Amazon Connect Quickstart 1.1, August 2017"
 Parameters:
-  SBaseURL:
+  SpiceBaseURL:
     Type: String
-    Default: "SpiceCSM Base URL"    
+    Default: "yourcompany.spicecsm.com"
+  AutomatedReaderPath:
+    Type: String
+    Default: "/automatedreader"
 Resources:
   SpiceExecutionRole:
     Type: "AWS::IAM::Role"
@@ -36,8 +39,8 @@ Resources:
     Properties:
         Handler: "index.handler"
         Runtime: "nodejs6.10"
-        FunctionName: "spicecsm-integration"
-        Description: "SpiceCSM Integration for Amazon Connect"
+        FunctionName: "spicecsm-amazon-connect-integration"
+        Description: "Allows for communication between an Amazon Connect Contact Flow and the SpiceCSM Automated Reader"
         MemorySize: 128
         Timeout: 30
         Role:
@@ -47,7 +50,9 @@ Resources:
         Environment:
           Variables:
             baseSpiceUrl:
-              Ref: SBaseURL
+              Ref: SpiceBaseURL
+            automatedReaderPath:
+              Ref: AutomatedReaderPath
         Tags:
           -
             Key: "Service"
@@ -55,7 +60,6 @@ Resources:
         Code:
           ZipFile: |
             exports.handler = (event, context, returnToFlow) => {
-              const automatedReaderPath = '/automatedreader';
               var querystring = require('querystring');
               var http = require('https');
               var variables = {}; 
@@ -70,11 +74,11 @@ Resources:
                     variables[i] = event.Details.Parameters[i];
                   }
                 } else {
-                  var results = {lambdaResult: 'Error', errorMessage: 'The \'processid\' is not specified as a parameter to the lambda function.'};
+                  var results = {lambdaResult: 'Error', errorMessage: 'The "processid" is not specified as a parameter to the lambda function.'};
                   return returnToFlow(null,results);
               }
               } else {
-                var results = {lambdaResult: 'Error', errorMessage: 'There were no parameters specified. The \'processid\' parameter is required.'};
+                var results = {lambdaResult: 'Error', errorMessage: 'There were no parameters specified. The "processid" parameter is required.'};
                 return returnToFlow(null,results);
               }
 
@@ -83,7 +87,7 @@ Resources:
                 processid: processid,
                 variables: variables
               };
-              console.log(params);
+              console.log(params); // for cloud watch
               var postData = querystring.stringify({
                 params: JSON.stringify(params)
               });
@@ -139,7 +143,7 @@ Resources:
     Type: "AWS::Lambda::Permission"
     DependsOn: "SpiceLambdaFunction"
     Properties: 
-      FunctionName: "spicecsm-integration"
+      FunctionName: "spicecsm-amazon-connect-integration"
       Action: 'lambda:InvokeFunction'
       Principal: 'connect.amazonaws.com'
       SourceAccount:
@@ -152,7 +156,7 @@ Outputs:
         - "SpiceExecutionRole"
         - "Arn"
   SpiceLambdaFunction:
-    Description: "Lambda Function for SpiceCSM Integration"
+    Description: "Lambda Function for SpiceCSM - Amazon Connect Integration"
     Value:
       Fn::GetAtt:
         - "SpiceLambdaFunction"
