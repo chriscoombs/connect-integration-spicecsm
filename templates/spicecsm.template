@@ -79,7 +79,7 @@ Resources:
   SpiceLambdaFunction:
     Type: AWS::Lambda::Function
     Properties:
-      Handler: index.handler
+      Handler: spicecsm.handler
       Runtime: nodejs6.10
       FunctionName: spicecsm-amazon-connect-integration
       Description: Allows for communication between an Amazon Connect Contact Flow
@@ -100,10 +100,10 @@ Resources:
       - Key: Service
         Value: ContactCenter
       Code:
-        Fn::Transform:
-          Name: AWS::Include
-          ZipFile:
-            Location: s3://${QSS3BucketName}/${QSS3KeyPrefix}scripts/spicecsm.js
+        S3Bucket:
+            Ref: QSS3BucketName
+        S3Key:
+          Fn::Sub: ${QSS3KeyPrefix}scripts/spicecsm.zip
   SpiceInvokePermission:
     Type: AWS::Lambda::Permission
     DependsOn: SpiceLambdaFunction
