@@ -103,7 +103,7 @@ Resources:
         S3Bucket:
             Ref: QSS3BucketName
         S3Key:
-          Fn::Sub: ${QSS3KeyPrefix}scripts/spicecsm.zip
+          Fn::Sub: ${QSS3KeyPrefix}scripts/packages/spicecsm.zip
   SpiceInvokePermission:
     Type: AWS::Lambda::Permission
     DependsOn: SpiceLambdaFunction
