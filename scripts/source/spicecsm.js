@@ -38,7 +38,7 @@ exports.handler = (event, context, returnToFlow) => {
     });
 
     var options = {
-        hostname: baseSpiceUrl,
+        hostname: spiceCustomerName + '.spicecsm.com',
         port: 443,
         path: automatedReaderPath,
         method: 'POST',

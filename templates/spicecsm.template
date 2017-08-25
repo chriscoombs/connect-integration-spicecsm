@@ -7,48 +7,49 @@ Metadata:
     - Label:
         default: Amazon Connect SpiceCSM Integration
       Parameters:
-      - SpiceBaseURL
+      - SpiceCustomerName
       - AutomatedReaderPath
-    - Label:
-        default: AWS Quick Start Configuration
-      Parameters:
-      - QSS3BucketName
-      - QSS3KeyPrefix
     ParameterLabels:
       AutomatedReaderPath:
         default: Automated Reader Path
-      SpiceBaseURL:
-        default: Spice Base URL
-      QSS3BucketName:
-        default: Quick Start S3 Bucket Name
-      QSS3KeyPrefix:
-        default: Quick Start S3 Bucket Prefix
+      SpiceCustomerName:
+        default: Spice Customer Name
 Parameters:
   AutomatedReaderPath:
+    AllowedPattern: ^\/[a-z]+$
+    ConstraintDescription: Automated Reader Path can include numbers, lowercase
+      letters, uppercase letters. It must start with a slash (/).
     Default: /automatedreader
+    Description: TBD
     Type: String
-  SpiceBaseURL:
-    Default: yourcompany.spicecsm.com
+  SpiceCustomerName:
+    AllowedPattern: ^[a-z]+$
+    ConstraintDescription: Spice customer name can include numbers, lowercase
+      letters, uppercase letters. It must start with a slash (/).
+    Default: yourcompany
+    Description: TBD which is part of yourcompany.spicecsm.com
     Type: String
-  QSS3BucketName:
-    AllowedPattern: ^[0-9a-zA-Z]+([0-9a-zA-Z-]*[0-9a-zA-Z])*$
-    ConstraintDescription: Quick Start bucket name can include numbers, lowercase
-      letters, uppercase letters, and hyphens (-). It cannot start or end with a hyphen
-      (-).
-    Default: quickstart-reference
-    Description: S3 bucket name for the Quick Start assets. This string can include
-      numbers, lowercase letters, uppercase letters, and hyphens (-). It cannot start
-      or end with a hyphen (-).
-    Type: String
-  QSS3KeyPrefix:
-    AllowedPattern: ^[0-9a-zA-Z-/]*$
-    ConstraintDescription: Quick Start key prefix can include numbers, lowercase letters,
-      uppercase letters, hyphens (-), and forward slash (/).
-    Default: connect/integration/spicecsm/latest/
-    Description: S3 key prefix for the Quick Start assets. Quick Start key prefix
-      can include numbers, lowercase letters, uppercase letters, hyphens (-), and
-      forward slash (/).
-    Type: String
+Rules:
+  RegionSupport:
+    Assertions:
+    - Assert:
+        Fn::Equals:
+          - Ref: AWS::Region
+          - us-east-1
+      AssertDescription: Region must be US East (N. Virginia) - us-east-1
+  ParameterDefaults:
+    Assertions:
+    - Assert:
+        Fn::And:
+        - Fn::Not:
+          - Fn::Equals:
+            - Ref: AutomatedReaderPath
+            - /automatedreader
+        - Fn::Not:
+          - Fn::Equals:
+            - Ref: SpiceCustomerName
+            - yourcompany
+      AssertDescription: Amazon Connect SpiceCSM Integration parameters cannot be defaults
 Resources:
   SpiceExecutionRole:
     Type: AWS::IAM::Role
@@ -92,8 +93,8 @@ Resources:
         - Arn
       Environment:
         Variables:
-          baseSpiceUrl:
-            Ref: SpiceBaseURL
+          spiceCustomerName:
+            Ref: SpiceCustomerName
           automatedReaderPath:
             Ref: AutomatedReaderPath
       Tags:
@@ -101,9 +102,9 @@ Resources:
         Value: ContactCenter
       Code:
         S3Bucket:
-            Ref: QSS3BucketName
+            Ref: quickstart-reference
         S3Key:
-          Fn::Sub: ${QSS3KeyPrefix}scripts/packages/spicecsm.zip
+          Fn::Sub: connect/integration/spicecsm/latest/scripts/packages/spicecsm.zip
   SpiceInvokePermission:
     Type: AWS::Lambda::Permission
     DependsOn: SpiceLambdaFunction
