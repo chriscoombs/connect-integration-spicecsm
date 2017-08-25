@@ -101,8 +101,7 @@ Resources:
       - Key: Service
         Value: ContactCenter
       Code:
-        S3Bucket:
-            Ref: quickstart-reference
+        S3Bucket: quickstart-reference
         S3Key:
           Fn::Sub: connect/integration/spicecsm/latest/scripts/packages/spicecsm.zip
   SpiceInvokePermission:
