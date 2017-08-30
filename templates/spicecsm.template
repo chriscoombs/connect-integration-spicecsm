@@ -1,204 +1,129 @@
-AWSTemplateFormatVersion: "2010-09-09"
-Description: "SpiceCSM Integration for Amazon Connect Quickstart 1.1, August 2017"
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: SpiceCSM Integration for Amazon Connect Quickstart 1.2, August 2017
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+    - Label:
+        default: Amazon Connect SpiceCSM Integration
+      Parameters:
+      - SpiceCustomerName
+      - AutomatedReaderPath
+    ParameterLabels:
+      AutomatedReaderPath:
+        default: Automated Reader Path
+      SpiceCustomerName:
+        default: Spice Customer Name
 Parameters:
-  SpiceBaseURL:
-    Type: String
-    Default: "yourcompany.spicecsm.com"
   AutomatedReaderPath:
+    AllowedPattern: ^\/[a-z]+$
+    ConstraintDescription: Automated Reader Path can include numbers, lowercase
+      letters, uppercase letters. It must start with a slash (/).
+    Default: /automatedreader
+    Description: TBD
     Type: String
-    Default: "/automatedreader"
+  SpiceCustomerName:
+    AllowedPattern: ^[a-z]+$
+    ConstraintDescription: Spice customer name can include numbers, lowercase
+      letters, uppercase letters. It must start with a slash (/).
+    Default: yourcompany
+    Description: TBD which is part of yourcompany.spicecsm.com
+    Type: String
+Rules:
+  RegionSupport:
+    Assertions:
+    - Assert:
+        Fn::Equals:
+          - Ref: AWS::Region
+          - us-east-1
+      AssertDescription: Region must be US East (N. Virginia) - us-east-1
+  ParameterDefaults:
+    Assertions:
+    - Assert:
+        Fn::And:
+        - Fn::Not:
+          - Fn::Equals:
+            - Ref: AutomatedReaderPath
+            - /automatedreader
+        - Fn::Not:
+          - Fn::Equals:
+            - Ref: SpiceCustomerName
+            - yourcompany
+      AssertDescription: Amazon Connect SpiceCSM Integration parameters cannot be defaults
 Resources:
   SpiceExecutionRole:
-    Type: "AWS::IAM::Role"
+    Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
-        Version: "2012-10-17"
+        Version: '2012-10-17'
         Statement:
-          Effect: "Allow"
+          Effect: Allow
           Principal:
             Service:
-              - "lambda.amazonaws.com"
+            - lambda.amazonaws.com
           Action:
-            - "sts:AssumeRole"
-      Path: "/"
+          - sts:AssumeRole
+      Path: /
       Policies:
-        - PolicyName: root
-          PolicyDocument:
-            Version: "2012-10-17"
-            Statement:
-              - Effect: "Allow"
-                Action:
-                - "logs:PutLogEvents"
-                - "lambda:InvokeFunction"
-                - "lambda:GetFunctionConfiguration"
-                Resource: "*"
+      - PolicyName: root
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Action:
+            - logs:PutLogEvents
+            - lambda:InvokeFunction
+            - lambda:GetFunctionConfiguration
+            Resource: '*'
       ManagedPolicyArns:
-        - "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+      - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
   SpiceLambdaFunction:
-    Type: "AWS::Lambda::Function"
+    Type: AWS::Lambda::Function
     Properties:
-        Handler: "index.handler"
-        Runtime: "nodejs6.10"
-        FunctionName: "spicecsm-amazon-connect-integration"
-        Description: "Allows for communication between an Amazon Connect Contact Flow and the SpiceCSM Automated Reader"
-        MemorySize: 128
-        Timeout: 30
-        Role:
-          Fn::GetAtt:
-            - "SpiceExecutionRole"
-            - "Arn"
-        Environment:
-          Variables:
-            baseSpiceUrl:
-              Ref: SpiceBaseURL
-            automatedReaderPath:
-              Ref: AutomatedReaderPath
-        Tags:
-          -
-            Key: "Service"
-            Value: "ContactCenter"
-        Code:
-          ZipFile: |
-            /*
-             * Test Event:
-             *  {
-             *    "Details": {
-             *      "Parameters": {
-             *        "processid: "ping"
-             *      }
-             *    }
-             *  }
-             *  
-             *  Successful Ping Result:
-             *  {
-             *    "status": "active",
-             *    "lambdaResult": "Success"
-             *  }
-             *
-             *  Failed Ping Result:
-             *  {
-             *    "status": "inactive",
-             *    "lambdaResult: "Error"
-             *  }
-             *
-             */
-            exports.handler = (event, context, returnToFlow) => {
-              var querystring = require('querystring');
-              var http = require('https');
-              var variables = {}; 
-              var processid;
-
-              console.log(event);
-              if (event.Details && event.Details.Parameters) {
-                if (event.Details.Parameters.processid) {
-                  processid = event.Details.Parameters.processid;
-                  for (var i in event.Details.Parameters) {
-                    if (i == 'processid')
-                      continue;
-
-                    variables[i] = event.Details.Parameters[i]; // assign all passed flow parameters to the spice process variables except for processid
-                  }
-                } else {
-                  var results = {lambdaResult: 'Error', errorMessage: 'The "processid" is not specified as a parameter to the lambda function.'};
-                  return returnToFlow(null,results);
-                }
-              } else {
-                var results = {lambdaResult: 'Error', errorMessage: 'There were no parameters specified. The "processid" parameter is required.'};
-                return returnToFlow(null,results);
-              }
-
-              var params = {
-                returnType: 'plain',
-                processid: processid,
-                variables: variables
-              };
-              console.log(params); // for cloud watch
-              var postData = querystring.stringify({
-                params: JSON.stringify(params)
-              });
-
-              var options = {
-                hostname: baseSpiceUrl,
-                port: 443,
-                path: automatedReaderPath,
-                method: 'POST',
-                agent: false,
-                headers: {
-                  'Content-Type': 'application/x-www-form-urlencoded',
-                  'Content-Length': Buffer.byteLength(postData)
-                }
-              };
-
-              var req = http.request(options, function(res) {
-                var dat = '';
-                res.on('data', function(data) {
-                  dat += data;
-                });
-                res.on('end', function() {
-                  console.log(dat); // for cloud watch
-                
-                  if (params.processid == 'ping' && res.statusCode == 200) { // a successful response from the automated reader ping
-                    var results = {
-                      status: 'active',
-                      lambdaResult: 'Success'
-                    };
-                    return returnToFlow(null,results);
-                
-                  } else if (params.processid == 'ping') { // a failed response from the automated reader ping
-                    var results = {
-                      status: 'inactive',
-                      lambdaResult: "Error"
-                    };
-                    return returnToFlow(null,results);
-                  }
-                
-                  var d = JSON.parse(dat);
-                  var results = {
-                    log: d.log,
-                    path: d.path,
-                    processid: d.processid,
-                    filename: d.filename,
-                    filepath: d.filepath,
-                    lambdaResult:"Success"
-                  };
-
-                  if (d.variables && (d.variables.constructor == Array || d.variables.constructor == Object)) {
-                    for (var i in d.variables) {
-                      if (!results[i])
-                        results[i] = d.variables[i];
-                    }
-                  }
-                  returnToFlow(null, results);
-                });
-              });
-
-              req.on('error', function(e) {
-                var results = {lambdaResult: 'Error', errorMessage: 'Problem with request: '+e.message};
-                returnToFlow(null,results);
-              });
-
-              req.write(postData);
-              req.end();
-            };
-  SpiceInvokePermission: 
-    Type: "AWS::Lambda::Permission"
-    DependsOn: "SpiceLambdaFunction"
-    Properties: 
-      FunctionName: "spicecsm-amazon-connect-integration"
-      Action: 'lambda:InvokeFunction'
-      Principal: 'connect.amazonaws.com'
+      Handler: spicecsm.handler
+      Runtime: nodejs6.10
+      FunctionName: spicecsm-amazon-connect-integration
+      Description: Allows for communication between an Amazon Connect Contact Flow
+        and the SpiceCSM Automated Reader
+      MemorySize: 128
+      Timeout: 30
+      Role:
+        Fn::GetAtt:
+        - SpiceExecutionRole
+        - Arn
+      Environment:
+        Variables:
+          spiceCustomerName:
+            Ref: SpiceCustomerName
+          automatedReaderPath:
+            Ref: AutomatedReaderPath
+      Tags:
+      - Key: Service
+        Value: ContactCenter
+      Code:
+        S3Bucket: quickstart-reference
+        S3Key:
+          Fn::Sub: connect/integration/spicecsm/latest/scripts/packages/spicecsm.zip
+  SpiceInvokePermission:
+    Type: AWS::Lambda::Permission
+    DependsOn: SpiceLambdaFunction
+    Properties:
+      FunctionName: spicecsm-amazon-connect-integration
+      Action: lambda:InvokeFunction
+      Principal: connect.amazonaws.com
       SourceAccount:
-        Ref: 'AWS::AccountId'             
+        Ref: AWS::AccountId
 Outputs:
   SpiceExecutionRole:
-    Description: "Lambda Function Execution Role"
+    Description: Lambda Function Execution Role
     Value:
       Fn::GetAtt:
-        - "SpiceExecutionRole"
-        - "Arn"
+      - SpiceExecutionRole
+      - Arn
   SpiceLambdaFunction:
-    Description: "Lambda Function for SpiceCSM - Amazon Connect Integration"
+    Description: Lambda Function for SpiceCSM - Amazon Connect Integration
     Value:
       Fn::GetAtt:
-        - "SpiceLambdaFunction"
-        - "Arn"
+      - SpiceLambdaFunction
+      - Arn
+...
