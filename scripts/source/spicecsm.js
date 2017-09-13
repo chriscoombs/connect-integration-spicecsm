@@ -23,6 +23,13 @@
  */
 
 exports.handler = (event, context, returnToFlow) => {
+
+  if (event.ResourceProperties) { // cloud formation ?
+    var response = require('cfn-response');
+    response.send(event,context,response.SUCCESS,{Value: 'success'}); // tell cloud formation that the function is created ?
+    return;
+  }
+
   var querystring = require('querystring');
   var http = require('https');
   var variables = {};
