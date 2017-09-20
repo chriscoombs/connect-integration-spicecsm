@@ -7,24 +7,14 @@ Metadata:
     - Label:
         default: Amazon Connect SpiceCSM Integration
       Parameters:
-      - SpiceCustomerName
-      - AutomatedReaderPath
+      - SpiceCSMSubdomain
     ParameterLabels:
-      AutomatedReaderPath:
-        default: Automated Reader Path
-      SpiceCustomerName:
-        default: Spice Customer Name
+      SpiceCSMSubdomain:
+        default: SpiceCSM Subdomain
 Parameters:
-  AutomatedReaderPath:
-    AllowedPattern: ^\/[a-z]+$
-    ConstraintDescription: Automated Reader Path can include numbers, lowercase
-      letters, uppercase letters. It must start with a slash (/).
-    Default: /automatedreader
-    Description: TBD
-    Type: String
-  SpiceCustomerName:
+  SpiceCSMSubdomain:
     AllowedPattern: ^[a-z]+$
-    ConstraintDescription: Spice customer name can include numbers, lowercase
+    ConstraintDescription: SpiceCSM subdomain can include numbers, lowercase
       letters, uppercase letters. It must start with a slash (/).
     Default: yourcompany
     Description: TBD which is part of yourcompany.spicecsm.com
@@ -43,11 +33,7 @@ Rules:
         Fn::And:
         - Fn::Not:
           - Fn::Equals:
-            - Ref: AutomatedReaderPath
-            - /automatedreader
-        - Fn::Not:
-          - Fn::Equals:
-            - Ref: SpiceCustomerName
+            - Ref: SpiceCSMSubdomain
             - yourcompany
       AssertDescription: Amazon Connect SpiceCSM Integration parameters cannot be defaults
 Resources:
@@ -93,10 +79,8 @@ Resources:
         - Arn
       Environment:
         Variables:
-          spiceCustomerName:
-            Ref: SpiceCustomerName
-          automatedReaderPath:
-            Ref: AutomatedReaderPath
+          spiceSubdomain:
+            Ref: SpiceCSMSubdomain
       Tags:
       - Key: Service
         Value: ContactCenter
@@ -113,6 +97,23 @@ Resources:
       Principal: connect.amazonaws.com
       SourceAccount:
         Ref: AWS::AccountId
+  CFQuickStart:
+    Type: Custom::LambdaCallout
+    Properties:
+      Handler: spicecsm.quickstart
+      Runtime: nodejs6.10
+      FunctionName: CFQuickStartCheck
+      Description: Checks for valid Quick Start data
+      MemorySize: 128
+      Timeout: 30
+      Role:
+        Fn::GetAtt:
+          - SpiceExecutionRole
+          - Arn
+      Code:
+        S3Bucket: quickstart-reference
+        S3Key:
+          Fn::Sub: connect/integration/spicecsm/latest/scripts/packages/spicecsm.zip
 Outputs:
   SpiceExecutionRole:
     Description: Lambda Function Execution Role
@@ -126,4 +127,10 @@ Outputs:
       Fn::GetAtt:
       - SpiceLambdaFunction
       - Arn
+  Results:
+    Description: Check for and test SpiceCSM instance
+    Value:
+      Fn::GetAtt:
+      - CFQuickStart
+      - SpiceCSMSubdomain
 ...
