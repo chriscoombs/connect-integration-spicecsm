@@ -1,13 +1,41 @@
 ---
 AWSTemplateFormatVersion: '2010-09-09'
-Description: SpiceCSM Integration for Amazon Connect Quickstart 1.1, August 2017
+Description: SpiceCSM Integration for Amazon Connect Quickstart 1.2, August 2017
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+    - Label:
+        default: Amazon Connect SpiceCSM Integration
+      Parameters:
+      - SpiceCSMSubdomain
+    ParameterLabels:
+      SpiceCSMSubdomain:
+        default: SpiceCSM Subdomain
 Parameters:
-  SpiceBaseURL:
+  SpiceCSMSubdomain:
+    AllowedPattern: ^[a-z]+$
+    ConstraintDescription: SpiceCSM subdomain can include numbers, lowercase
+      letters, uppercase letters. It must start with a slash (/).
+    Default: yourcompany
+    Description: TBD which is part of yourcompany.spicecsm.com
     Type: String
-    Default: yourcompany.spicecsm.com
-  AutomatedReaderPath:
-    Type: String
-    Default: /automatedreader
+Rules:
+  RegionSupport:
+    Assertions:
+    - Assert:
+        Fn::Equals:
+          - Ref: AWS::Region
+          - us-east-1
+      AssertDescription: Region must be US East (N. Virginia) - us-east-1
+  ParameterDefaults:
+    Assertions:
+    - Assert:
+        Fn::And:
+        - Fn::Not:
+          - Fn::Equals:
+            - Ref: SpiceCSMSubdomain
+            - yourcompany
+      AssertDescription: Amazon Connect SpiceCSM Integration parameters cannot be defaults
 Resources:
   SpiceExecutionRole:
     Type: AWS::IAM::Role
@@ -38,7 +66,7 @@ Resources:
   SpiceLambdaFunction:
     Type: AWS::Lambda::Function
     Properties:
-      Handler: index.handler
+      Handler: spicecsm.handler
       Runtime: nodejs6.10
       FunctionName: spicecsm-amazon-connect-integration
       Description: Allows for communication between an Amazon Connect Contact Flow
@@ -51,95 +79,15 @@ Resources:
         - Arn
       Environment:
         Variables:
-          baseSpiceUrl:
-            Ref: SpiceBaseURL
-          automatedReaderPath:
-            Ref: AutomatedReaderPath
+          spiceSubdomain:
+            Ref: SpiceCSMSubdomain
       Tags:
       - Key: Service
         Value: ContactCenter
       Code:
-        ZipFile: |
-          exports.handler = (event, context, returnToFlow) => {
-            var querystring = require('querystring');
-            var http = require('https');
-            var variables = {};
-            var processid;
-
-            if (event.Details && event.Details.Parameters) {
-              if (event.Details.Parameters.processid) {
-                processid = event.Details.Parameters.processid;
-                for (var i in event.Details.Parameters) {
-                  if (i == 'processid')
-                    continue;
-                  variables[i] = event.Details.Parameters[i];
-                }
-              } else {
-                var results = {lambdaResult: 'Error', errorMessage: 'The "processid" is not specified as a parameter to the lambda function.'};
-                return returnToFlow(null,results);
-            }
-            } else {
-              var results = {lambdaResult: 'Error', errorMessage: 'There were no parameters specified. The "processid" parameter is required.'};
-              return returnToFlow(null,results);
-            }
-
-            var params = {
-              returnType: 'plain',
-              processid: processid,
-              variables: variables
-            };
-            console.log(params); // for cloud watch
-            var postData = querystring.stringify({
-              params: JSON.stringify(params)
-            });
-
-            var options = {
-              hostname: baseSpiceUrl,
-              port: 443,
-              path: automatedReaderPath,
-              method: 'POST',
-              agent: false,
-              headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-                'Content-Length': Buffer.byteLength(postData)
-              }
-            };
-
-            var req = http.request(options, function(res) {
-              var dat = '';
-              res.on('data', function(data) {
-                dat += data;
-              });
-            res.on('end', function() {
-              console.log(dat); // for cloud watch
-              var d = JSON.parse(dat);
-              var results = {
-                log: d.log,
-                path: d.path,
-                processid: d.processid,
-                filename: d.filename,
-                filepath: d.filepath,
-                lambdaResult:"Success"
-              };
-
-            if (d.variables && (d.variables.constructor == Array || d.variables.constructor == Object)) {
-              for (var i in d.variables) {
-                if (!results[i])
-                  results[i] = d.variables[i];
-                }
-            }
-            returnToFlow(null, results);
-          });
-          });
-
-          req.on('error', function(e) {
-           var results = {lambdaResult: 'Error', errorMessage: 'Problem with request: '+e.message};
-           returnToFlow(null,results);
-          });
-
-          req.write(postData);
-          req.end();
-          };
+        S3Bucket: quickstart-reference
+        S3Key:
+          Fn::Sub: connect/integration/spicecsm/latest/scripts/packages/spicecsm.zip
   SpiceInvokePermission:
     Type: AWS::Lambda::Permission
     DependsOn: SpiceLambdaFunction
@@ -149,6 +97,23 @@ Resources:
       Principal: connect.amazonaws.com
       SourceAccount:
         Ref: AWS::AccountId
+  CFQuickStart:
+    Type: Custom::LambdaCallout
+    Properties:
+      Handler: spicecsm.quickstart
+      Runtime: nodejs6.10
+      FunctionName: CFQuickStartCheck
+      Description: Checks for valid Quick Start data
+      MemorySize: 128
+      Timeout: 30
+      Role:
+        Fn::GetAtt:
+          - SpiceExecutionRole
+          - Arn
+      Code:
+        S3Bucket: quickstart-reference
+        S3Key:
+          Fn::Sub: connect/integration/spicecsm/latest/scripts/packages/spicecsm.zip
 Outputs:
   SpiceExecutionRole:
     Description: Lambda Function Execution Role
@@ -162,4 +127,10 @@ Outputs:
       Fn::GetAtt:
       - SpiceLambdaFunction
       - Arn
+  Results:
+    Description: Check for and test SpiceCSM instance
+    Value:
+      Fn::GetAtt:
+      - CFQuickStart
+      - SpiceCSMSubdomain
 ...
