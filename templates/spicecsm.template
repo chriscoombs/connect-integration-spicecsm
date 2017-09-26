@@ -30,7 +30,6 @@ Rules:
   ParameterDefaults:
     Assertions:
     - Assert:
-        Fn::And:
         - Fn::Not:
           - Fn::Equals:
             - Ref: SpiceCSMSubdomain
@@ -98,7 +97,7 @@ Resources:
       SourceAccount:
         Ref: AWS::AccountId
   CFQuickStart:
-    Type: Custom::LambdaCallout
+    Type: AWS::Lambda::Function
     Properties:
       Handler: spicecsm.quickstart
       Runtime: nodejs6.10
