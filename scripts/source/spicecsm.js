@@ -35,7 +35,7 @@ exports.quickstart = function(event,context) {
     var options = {
       hostname: 'corporate.spicecsm.com',
       port: 443,
-      path: '/automatedreader',
+      path: '/abstracted/Frictionless/aws/quickstart/CheckActiveSubdomain.php',
       method: 'POST',
       agent: false,
       headers: {
@@ -79,6 +79,7 @@ exports.quickstart = function(event,context) {
         lambdaResult: 'Error',
         errorMessage: 'Problem with request: ' + e.message
       };
+      response.send(event,context,response.FAILED,{SpiceCSMSubdomain: results.errorMessage});
     });
 
     req.write(postData);
@@ -86,10 +87,10 @@ exports.quickstart = function(event,context) {
 
   } else if (event.RequestType == 'Update') {
     console.log('The validation function is not configured to handle the Update request type');
-    response.send(event,context,response.FAILED,{SpiceCSMSubdomain: false, AutomatedReaderPath: false});
+    response.send(event,context,response.FAILED,{SpiceCSMSubdomain: false});
   } else if (event.RequestType == 'Delete') {
     console.log('The validation function is not configured to handle the Delete request type');
-    response.send(event,context,response.FAILED,{SpiceCSMSubdomain: false, AutomatedReaderPath: false});
+    response.send(event,context,response.FAILED,{SpiceCSMSubdomain: false});
   }
  
 };
