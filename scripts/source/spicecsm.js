@@ -8,29 +8,19 @@ exports.quickstart = function(event,context) {
 
   var response = require('cfn-response');
 
+  console.log(event); // cloud watch
+
   if (event.RequestType == 'Create') {
    
-    /*
-     * The following makes a call to the automated reader on the SpiceCSM
-     * corporate site. The Automated Process checks to see if the subdomain/customerid
-     * has an automation suite product and if it is active.
-     *
-     */
+    var subdomain = null;
+    if (event.ResourceProperties && event.ResourceProperties.SpiceCSMSubdomain)
+      subdomain = event.ResourceProperties.SpiceCSMSubdomain;
 
     var variables = {
-      customerid: '',
-      subdomain: ''
+      subdomain: subdomain
     };
 
-    var params = {
-      returnType: 'plain',
-      processid: '8280',
-      variables: variables
-    };
-    
-    var postData = querystring.stringify({
-      params: JSON.stringify(params)
-    });
+    var postData = querystring.stringify(JSON.stringify(variables));
 
     var options = {
       hostname: 'corporate.spicecsm.com',
@@ -50,10 +40,12 @@ exports.quickstart = function(event,context) {
       });
       res.on('end', function() {
 
+        console.log(dat); // cloud watch
+
         /*
          * d: {
-         *   subdomain: string with subdomain OR boolean false
-         *   ping: boolean true if the subdomain's automated reader is active, false otherwise
+         *   subdomain: boolean
+         *   ping: boolean 
          * }
          *
          */
@@ -65,10 +57,10 @@ exports.quickstart = function(event,context) {
           // the automated reader is down, an email was generated and sent to spice support
           response.send(event,context,response.SUCCESS,{SpiceCSMSubdomain: d.subdomain});
         
-        } else if (!d.subdomain) { // user does not have a spice instance
+        } else if (!d.subdomain) { // subdomain does not have a spice instance or does not have access to the automated reader
           var err = 'You have not purchased a SpiceCSM Automation Suite product. Please purchase one from the AWS Marketplace.';
-          console.log(str);
-          response.send(event,context,response.FAILED,{SpiceCSMSubdomain: str}); // complete failure
+          console.log(err);
+          response.send(event,context,response.FAILED,{SpiceCSMSubdomain: err}); // complete failure
         }
 
       });

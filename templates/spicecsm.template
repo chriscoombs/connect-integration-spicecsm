@@ -17,7 +17,7 @@ Parameters:
     ConstraintDescription: SpiceCSM subdomain can include numbers, lowercase
       letters, uppercase letters. It must start with a slash (/).
     Default: yourcompany
-    Description: TBD which is part of yourcompany.spicecsm.com
+    Description: The subdomain of you SpiceCSM instance
     Type: String
 Rules:
   RegionSupport:
@@ -30,7 +30,7 @@ Rules:
   ParameterDefaults:
     Assertions:
     - Assert:
-        - Fn::Not:
+        Fn::Not:
           - Fn::Equals:
             - Ref: SpiceCSMSubdomain
             - yourcompany
@@ -84,7 +84,7 @@ Resources:
       - Key: Service
         Value: ContactCenter
       Code:
-        S3Bucket: quickstart-reference
+        S3Bucket: spicecsm-quickstart-reference
         S3Key:
           Fn::Sub: connect/integration/spicecsm/latest/scripts/packages/spicecsm.zip
   SpiceInvokePermission:
@@ -126,10 +126,16 @@ Outputs:
       Fn::GetAtt:
       - SpiceLambdaFunction
       - Arn
-  Results:
-    Description: Check for and test SpiceCSM instance
+  CFQuickStart:
+    Description: Checks to see if SpiceCSM Amazon Connect Integration function will work
     Value:
       Fn::GetAtt:
       - CFQuickStart
-      - SpiceCSMSubdomain
+      - Arn
+  Results:
+    Description: Checks to see if SpiceCSM Amazon Connect Integration function will work
+    Value:
+      Fn::GetAtt:
+      - CFQuickStart
+      - Arn
 ...
