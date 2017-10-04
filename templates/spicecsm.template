@@ -62,6 +62,46 @@ Resources:
             Resource: '*'
       ManagedPolicyArns:
       - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+  QuickStartExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          Effect: Allow
+          Principal:
+            Service:
+            - lambda.amazonaws.com
+          Action:
+          - sts:AssumeRole
+      Path: /
+      ManagedPolicyArns:
+      - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+  CFQuickStart:
+    Type: AWS::Lambda::Function
+    Properties:
+      Handler: test.quickstart
+      Runtime: nodejs6.10
+      FunctionName: CFQuickStartCheck
+      Description: Checks for valid Quick Start data
+      MemorySize: 128
+      Timeout: 30
+      Role:
+        Fn::GetAtt:
+          - QuickStartExecutionRole
+          - Arn
+      Code:
+        S3Bucket: quickstart-reference
+        S3Key:
+          Fn::Sub: connect/integration/spicecsm/latest/scripts/packages/integration-test/test.zip
+  TestQuickStart:
+    Type: Custom::TestQuickStart
+    Version: '1.0'
+    Properties:
+      ServiceToken:
+        Fn::GetAtt: CFQuickStart.Arn
+      SpiceCSMSubdomain:
+        Ref: SpiceCSMSubdomain
   SpiceLambdaFunction:
     Type: AWS::Lambda::Function
     Properties:
@@ -84,7 +124,7 @@ Resources:
       - Key: Service
         Value: ContactCenter
       Code:
-        S3Bucket: spicecsm-quickstart-reference
+        S3Bucket: quickstart-reference
         S3Key:
           Fn::Sub: connect/integration/spicecsm/latest/scripts/packages/spicecsm.zip
   SpiceInvokePermission:
@@ -96,46 +136,13 @@ Resources:
       Principal: connect.amazonaws.com
       SourceAccount:
         Ref: AWS::AccountId
-  CFQuickStart:
-    Type: AWS::Lambda::Function
-    Properties:
-      Handler: spicecsm.quickstart
-      Runtime: nodejs6.10
-      FunctionName: CFQuickStartCheck
-      Description: Checks for valid Quick Start data
-      MemorySize: 128
-      Timeout: 30
-      Role:
-        Fn::GetAtt:
-          - SpiceExecutionRole
-          - Arn
-      Code:
-        S3Bucket: quickstart-reference
-        S3Key:
-          Fn::Sub: connect/integration/spicecsm/latest/scripts/packages/spicecsm.zip
 Outputs:
   SpiceExecutionRole:
     Description: Lambda Function Execution Role
     Value:
-      Fn::GetAtt:
-      - SpiceExecutionRole
-      - Arn
+      Fn::GetAtt: SpiceExecutionRole.Arn
   SpiceLambdaFunction:
     Description: Lambda Function for SpiceCSM - Amazon Connect Integration
     Value:
-      Fn::GetAtt:
-      - SpiceLambdaFunction
-      - Arn
-  CFQuickStart:
-    Description: Checks to see if SpiceCSM Amazon Connect Integration function will work
-    Value:
-      Fn::GetAtt:
-      - CFQuickStart
-      - Arn
-  Results:
-    Description: Checks to see if SpiceCSM Amazon Connect Integration function will work
-    Value:
-      Fn::GetAtt:
-      - CFQuickStart
-      - Arn
+      Fn::GetAtt: SpiceLambdaFunction.Arn
 ...
