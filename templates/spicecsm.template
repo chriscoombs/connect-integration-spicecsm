@@ -1,6 +1,6 @@
 ---
 AWSTemplateFormatVersion: '2010-09-09'
-Description: SpiceCSM Integration for Amazon Connect Quickstart (qs-1no5j9rq8)
+Description: SpiceCSM Integration for Amazon Connect Quick Start (qs-1no5j9rq8)
 Metadata:
   AWS::CloudFormation::Interface:
     ParameterGroups:
