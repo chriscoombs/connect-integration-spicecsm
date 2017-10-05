@@ -72,7 +72,6 @@ Resources:
     Properties:
       Handler: test.quickstart
       Runtime: nodejs6.10
-      FunctionName: CFQuickStartCheck
       Description: Checks for valid Quick Start data
       MemorySize: 128
       Timeout: 30
@@ -95,7 +94,6 @@ Resources:
     Properties:
       Handler: spicecsm.handler
       Runtime: nodejs6.10
-      FunctionName: spicecsm-amazon-connect-integration
       Description: Allows for communication between an Amazon Connect Contact Flow
         and the SpiceCSM Automated Reader
       MemorySize: 128
@@ -117,7 +115,8 @@ Resources:
     Type: AWS::Lambda::Permission
     DependsOn: SpiceLambdaFunction
     Properties:
-      FunctionName: spicecsm-amazon-connect-integration
+      FunctionName:
+        Ref: SpiceLambdaFunction
       Action: lambda:InvokeFunction
       Principal: connect.amazonaws.com
       SourceAccount:
