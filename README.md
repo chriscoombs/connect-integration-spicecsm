@@ -1,4 +1,4 @@
-# quickstart-connect-integration-spicecsm
+# connect-integration-spicecsm
 ## Amazon Connect Integration -- SpiceCSM
 
 This integration enables Amazon Connect to communicate with SpiceCSM automated processes to provide an end-to-end contact center solution. With SpiceCSM’s ability to integrate with any disparate system, data can be fed to Amazon Connect and read back to the caller via automated processes defined in SpiceCSM’s workflow engine. Through these processes the caller can easily engage with live agents without breaking the contact flow.
