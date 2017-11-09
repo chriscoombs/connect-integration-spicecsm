@@ -17,7 +17,7 @@ Parameters:
     ConstraintDescription: SpiceCSM subdomain can include numbers, lowercase letters,
       uppercase letters. It must start with a slash (/).
     Default: yourcompany
-    Description: The subdomain of you SpiceCSM instance
+    Description: The subdomain of your SpiceCSM instance
     Type: String
 Rules:
   RegionSupport:
