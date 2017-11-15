@@ -13,9 +13,9 @@ Metadata:
         default: SpiceCSM Subdomain
 Parameters:
   SpiceCSMSubdomain:
-    AllowedPattern: ^[a-z]+$
-    ConstraintDescription: SpiceCSM subdomain can include numbers, lowercase letters,
-      uppercase letters. It must start with a slash (/).
+    AllowedPattern: ^[a-z][a-z0-9]+$
+    ConstraintDescription: SpiceCSM subdomain must contain all lower case letters
+      with no spaces, underscores or special characters and cannot start with a number
     Default: yourcompany
     Description: The subdomain of your SpiceCSM instance
     Type: String
