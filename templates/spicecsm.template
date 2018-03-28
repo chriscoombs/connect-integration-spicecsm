@@ -78,9 +78,8 @@ Resources:
       Role:
         Fn::GetAtt: QuickStartExecutionRole.Arn
       Code:
-        S3Bucket: quickstart-reference
-        S3Key:
-          Fn::Sub: connect/integration/spicecsm/latest/functions/packages/spicecsm-integration-test/spicecsm-integration-test.zip
+        S3Bucket: aws-quickstart
+        S3Key: connect-integration-spicecsm/functions/packages/spicecsm-integration-test/spicecsm-integration-test.zip
   TestQuickStart:
     Type: Custom::TestQuickStart
     Version: '1.0'
@@ -108,9 +107,8 @@ Resources:
       - Key: Service
         Value: ContactCenter
       Code:
-        S3Bucket: quickstart-reference
-        S3Key:
-          Fn::Sub: connect/integration/spicecsm/latest/functions/packages/spicecsm-integration/spicecsm-integration.zip
+        S3Bucket: aws-quickstart
+        S3Key: connect-integration-spicecsm/functions/packages/spicecsm-integration/spicecsm-integration.zip
   SpiceInvokePermission:
     Type: AWS::Lambda::Permission
     DependsOn: SpiceLambdaFunction
