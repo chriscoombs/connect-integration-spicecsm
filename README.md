@@ -5,6 +5,6 @@ This integration enables Amazon Connect to communicate with SpiceCSM automated p
 
 ![Architecture for SpiceCSM integration](https://d0.awsstatic.com/partner-network/QuickStart/connect/connect-integration-spicecsm-architecture.png)
 
-For details and launch information, see the [data sheet](https://aws.amazon.com/quickstart/connect/spicecsm/).
+For details and launch information, see the [data sheet](https://fwd.aws/a5aJ7).
 
 To post feedback, submit feature ideas, or report bugs, use the **Issues** section of this GitHub repo.
