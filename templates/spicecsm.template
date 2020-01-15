@@ -71,7 +71,7 @@ Resources:
     Type: AWS::Lambda::Function
     Properties:
       Handler: test.quickstart
-      Runtime: nodejs6.10
+      Runtime: nodejs10.x
       Description: Checks for valid Quick Start data
       MemorySize: 128
       Timeout: 30
@@ -92,7 +92,7 @@ Resources:
     Type: AWS::Lambda::Function
     Properties:
       Handler: spicecsm.handler
-      Runtime: nodejs6.10
+      Runtime: nodejs10.x
       Description: Allows for communication between an Amazon Connect Contact Flow
         and the SpiceCSM Automated Reader
       MemorySize: 128
